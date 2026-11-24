@@ -1,0 +1,15 @@
+# secrets
+.env
+INSTRUCTION.md
+
+# build output
+cache/
+out/
+out-*/
+cache-*/
+build/
+node_modules/
+
+# foundry
+broadcast/**/dry-run/
+broadcast/**/31337/

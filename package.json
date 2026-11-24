@@ -1,0 +1,9 @@
+{
+  "name": "eez-gnosisbridge-deploy",
+  "private": true,
+  "description": "Solidity dependencies of the legacy bridge trees. Copied into build/<tree>/node_modules by scripts/build.sh.",
+  "dependencies": {
+    "@openzeppelin/contracts": "3.2.2-solc-0.7",
+    "openzeppelin-solidity": "1.12.0"
+  }
+}

@@ -1,0 +1,12 @@
+[submodule "lib/omnibridge"]
+	path = lib/omnibridge
+	url = https://github.com/gnosischain/omnibridge
+[submodule "lib/tokenbridge-amb"]
+	path = lib/tokenbridge-amb
+	url = https://github.com/gnosischain/tokenbridge-contracts
+[submodule "lib/tokenbridge-xdai"]
+	path = lib/tokenbridge-xdai
+	url = https://github.com/gnosischain/tokenbridge-contracts
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

@@ -2,10 +2,10 @@
 pragma solidity 0.8.25;
 
 import {Test, Vm} from "forge-std/Test.sol";
-import {PairConfig} from "../script/lib/Config.sol";
-import {BridgeDeployer, ForeignAddrs, HomeAddrs} from "../script/lib/BridgeDeployer.sol";
-import {Checks} from "../script/lib/Checks.sol";
-import "../script/lib/Interfaces.sol";
+import {PairConfig} from "../foundry-script/lib/Config.sol";
+import {BridgeDeployer, ForeignAddrs, HomeAddrs} from "../foundry-script/lib/BridgeDeployer.sol";
+import {Checks} from "../foundry-script/lib/Checks.sol";
+import "../foundry-script/lib/Interfaces.sol";
 
 contract AMBReceiver {
     uint256 public value;

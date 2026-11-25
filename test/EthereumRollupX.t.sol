@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import {PairTest} from "./PairTest.sol";
-import {PairConfig, Config} from "../script/lib/Config.sol";
+import {PairConfig, Config} from "../foundry-script/lib/Config.sol";
 
 /// @notice Ethereum (foreign) <-> RollupX (home). Needs ETHEREUM_RPC_URL and ROLLUPX_RPC_URL.
 contract EthereumRollupXTest is PairTest {

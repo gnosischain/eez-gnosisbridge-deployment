@@ -9,12 +9,12 @@ export
 
 # Optional extra flags, e.g. GAS_FLAGS="--with-gas-price 3gwei --priority-gas-price 1gwei" on Chiado.
 GAS_FLAGS ?=
-FORGE_SCRIPT = forge script script/Deploy.s.sol --private-key $(DEPLOYER_PRIVATE_KEY) --slow $(GAS_FLAGS)
+FORGE_SCRIPT = forge script foundry-script/Deploy.s.sol --private-key $(DEPLOYER_PRIVATE_KEY) --slow $(GAS_FLAGS)
 
 .PHONY: build test test-deployed simulate-foreign deploy-foreign deploy-home deploy-finalize check verify
 
 build:            ## export, patch and compile all trees
-	./scripts/build.sh
+	./shell-script/build.sh
 
 test:             ## fork tests: deploy on forks with the deploy code, then relay in both directions
 	forge test -vv
@@ -32,7 +32,7 @@ deploy-finalize:  ## stage 3 (foreign chain)
 	$(FORGE_SCRIPT) --sig "finalize()" --broadcast
 
 check:            ## read-only assertions on both live chains
-	forge script script/Deploy.s.sol --sig "check()"
+	forge script foundry-script/Deploy.s.sol --sig "check()"
 
 verify:           ## verify every contract of the pair on Blockscout
-	./scripts/verify.sh $(PAIR)
+	./shell-script/verify.sh $(PAIR)

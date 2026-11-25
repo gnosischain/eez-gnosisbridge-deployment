@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import {PairTest} from "./PairTest.sol";
-import {PairConfig, Config} from "../script/lib/Config.sol";
+import {PairConfig, Config} from "../foundry-script/lib/Config.sol";
 
 /// @notice Chiado (foreign) <-> RollupX testnet (home). Needs CHIADO_RPC_URL and ROLLUPX_TESTNET_RPC_URL.
 contract ChiadoRollupXTestnetTest is PairTest {

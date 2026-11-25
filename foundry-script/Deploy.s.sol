@@ -11,10 +11,10 @@ import {Checks} from "./lib/Checks.sol";
 /// @notice Deploys AMB + xDAI bridge + Omnibridge for one pair, selected with the PAIR environment variable
 /// ("chiado-rollupx-testnet" or "ethereum-rollupx"). Run the stages in order; see the Makefile.
 ///
-///   forge script script/Deploy.s.sol --sig "foreign()"  --broadcast --slow   # stage 1, foreign chain
-///   forge script script/Deploy.s.sol --sig "home()"     --broadcast --slow   # stage 2, home chain
-///   forge script script/Deploy.s.sol --sig "finalize()" --broadcast --slow   # stage 3, foreign chain
-///   forge script script/Deploy.s.sol --sig "check()"                         # read-only, both chains
+///   forge script foundry-script/Deploy.s.sol --sig "foreign()"  --broadcast --slow   # stage 1, foreign chain
+///   forge script foundry-script/Deploy.s.sol --sig "home()"     --broadcast --slow   # stage 2, home chain
+///   forge script foundry-script/Deploy.s.sol --sig "finalize()" --broadcast --slow   # stage 3, foreign chain
+///   forge script foundry-script/Deploy.s.sol --sig "check()"                         # read-only, both chains
 contract Deploy is Script, BridgeDeployer, Checks {
     function foreign() external {
         PairConfig memory c = _config();

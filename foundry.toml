@@ -1,11 +1,11 @@
 # Root project: mocks, deploy scripts and fork tests (solc 0.8.25).
-# The legacy bridge trees (solc 0.4.24 / 0.7.5) are compiled separately under build/ by scripts/build.sh
+# The legacy bridge trees (solc 0.4.24 / 0.7.5) are compiled separately under build/ by shell-script/build.sh
 # and loaded here as artifacts with vm.getCode.
 
 [profile.default]
 src = "src"
 test = "test"
-script = "script"
+script = "foundry-script"
 out = "out"
 cache_path = "cache"
 libs = ["lib/forge-std"]

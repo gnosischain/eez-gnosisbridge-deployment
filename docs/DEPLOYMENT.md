@@ -156,17 +156,17 @@ Toolchain: Foundry 1.8.5, Node 24 (only to fetch `openzeppelin-solidity@1.12.0` 
 
 | Path | Purpose |
 |---|---|
-| `scripts/build.sh` | Exports each submodule with `git archive` into `build/<tree>/`, applies the patches, compiles with the upstream compiler settings. The submodules are never modified. |
+| `shell-script/build.sh` | Exports each submodule with `git archive` into `build/<tree>/`, applies the patches, compiles with the upstream compiler settings. The submodules are never modified. |
 | `patches/` | The four committed diffs listed in 4.1. |
 | `src/MockERC20.sol` | Freely mintable ERC-20, used for the mock USDS and the Omnibridge test token. |
 | `src/BlockRewardStub.sol` | Records what the home xDAI bridge asks to mint, emits `AddedReceiver`, transfers nothing. Only the bridge proxy can call it. |
-| `script/lib/Config.sol` | Per-pair parameters (in Solidity rather than TOML, because the limits do not fit TOML integers). |
-| `script/lib/BridgeDeployer.sol` | The deployment steps, shared by the broadcast script and the fork tests. |
-| `script/lib/Checks.sol` | Post-deployment assertions: owners, proxy admins, validator set, limits, cross-chain links, Hashi off. |
-| `script/Deploy.s.sol` | Entry points `foreign()`, `home()`, `finalize()`, `check()`. |
+| `foundry-script/lib/Config.sol` | Per-pair parameters (in Solidity rather than TOML, because the limits do not fit TOML integers). |
+| `foundry-script/lib/BridgeDeployer.sol` | The deployment steps, shared by the broadcast script and the fork tests. |
+| `foundry-script/lib/Checks.sol` | Post-deployment assertions: owners, proxy admins, validator set, limits, cross-chain links, Hashi off. |
+| `foundry-script/Deploy.s.sol` | Entry points `foreign()`, `home()`, `finalize()`, `check()`. |
 | `test/PairTest.sol` | Two-fork tests for AMB, Omnibridge and xDAI bridge in both directions, plus negative cases. |
 | `test/ChiadoRollupXTestnet.t.sol`, `test/EthereumRollupX.t.sol` | One class per pair: config, fork blocks and the Omnibridge test token (mock token on Chiado, WETH on Ethereum). |
-| `scripts/verify.sh` | Verifies every address and fails if any is left unverified. |
+| `shell-script/verify.sh` | Verifies every address and fails if any is left unverified. |
 
 ### 4.1 Deviations from upstream source
 
@@ -218,7 +218,7 @@ Earlier notes:
 - Both the standard-JSON and the flattened-source methods are accepted (`Smart-contract verification started`) and then end in `Fail - Unable to verify`, also for a plain solc 0.8.25 contract.
 - `https://eez.dev/explorer/api/v2/smart-contracts/verification/config` returns an **empty** `solidity_compiler_versions` list. The mainnet RollupX explorer returns the same empty list.
 - Contracts on that explorer were verified as recently as 2026-11-10, so the verifier worked before.
-- This needs the explorer operator. Once it is fixed, `./scripts/verify.sh chiado-rollupx-testnet home` submits all 15 home contracts and prints the result.
+- This needs the explorer operator. Once it is fixed, `./shell-script/verify.sh chiado-rollupx-testnet home` submits all 15 home contracts and prints the result.
 - The Blockscout Pro API key is for Blockscout-hosted explorers; it is not sent to the self-hosted `eez.dev` explorer.
 
 ### 5.2 Chiado verification needs the Blockscout Pro API host
@@ -283,7 +283,7 @@ These are contract-level tests on forks. No real cross-chain transfer has been s
 
 ## 7. Open items
 
-1. **RollupX and RollupX testnet verification** — blocked by the explorers (5.1). 15 contracts on each rollup are unverified. Once fixed: `./scripts/verify.sh ethereum-rollupx home` and `./scripts/verify.sh chiado-rollupx-testnet home`.
+1. **RollupX and RollupX testnet verification** — blocked by the explorers (5.1). 15 contracts on each rollup are unverified. Once fixed: `./shell-script/verify.sh ethereum-rollupx home` and `./shell-script/verify.sh chiado-rollupx-testnet home`.
 2. **No oracle and no live transfer** — on both pairs nothing relays messages, and no real transfer has been sent through the live contracts. Funds sent into the mainnet bridges stay locked until the validator relays them.
 3. **Single validator on mainnet** — the Ethereum pair uses the one mock validator with threshold 1, as decided (O3, D9). Its key alone can release any USDS or WETH locked on Ethereum.
 4. **Git** — the Ethereum ↔ RollupX work is not staged, committed or pushed. `INSTRUCTION.md` and `.env` are git-ignored because they contain the deployer key and the API key.

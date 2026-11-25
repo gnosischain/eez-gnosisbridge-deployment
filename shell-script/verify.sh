@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Verifies every contract of a pair on Blockscout and then reports the verification state of each address.
 #
-#   ./scripts/verify.sh chiado-rollupx-testnet [foreign|home|status]
+#   ./shell-script/verify.sh chiado-rollupx-testnet [foreign|home|status]
 #
 # Verifier endpoints:
 #   Chiado / Ethereum : Blockscout Pro API (https://api.blockscout.com/<chainId>/api), needs BLOCKSCOUT_API_KEY.

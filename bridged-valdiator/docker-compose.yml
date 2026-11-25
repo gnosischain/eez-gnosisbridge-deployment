@@ -1,0 +1,238 @@
+# TokenBridge oracle (gnosischain/tokenbridge-oracle) for ONE bridge pair:
+# an AMB stack (also serves the Omnibridge) and an xDAI bridge stack.
+#
+# Run once per pair, each with its own env file (the env file sets the project name):
+#
+#   cp .env.ethereum-rollupx.example .env.ethereum-rollupx          # fill in the validator keys
+#   docker compose --env-file .env.ethereum-rollupx up -d
+#
+#   cp .env.chiado-rollupx-testnet.example .env.chiado-rollupx-testnet
+#   docker compose --env-file .env.chiado-rollupx-testnet up -d
+#
+# Logs:    docker compose --env-file .env.ethereum-rollupx logs -f amb_senderhome
+# Stop:    docker compose --env-file .env.ethereum-rollupx down        (add -v ONLY to wipe Redis/RabbitMQ state)
+#
+# Optional services (off by default):
+#   --profile fcr       FCR checkers. Needed only when a *_BLOCK_PROCESSING_MODE is "fcr".
+#   --profile shutdown  Shutdown managers. Needed only when ORACLE_SHUTDOWN_* is configured.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+
+# Settings shared by the AMB and the xDAI stack of this pair.
+x-common-env: &common-env
+  NODE_ENV: production
+  ORACLE_LOG_LEVEL: ${LOG_LEVEL:-info}
+  ORACLE_ALLOW_HTTP_FOR_RPC: ${ALLOW_HTTP_FOR_RPC:-no}
+  # RPC. Several URLs can be given, separated by spaces.
+  COMMON_HOME_RPC_URL: ${HOME_RPC_URL:?set HOME_RPC_URL}
+  COMMON_FOREIGN_RPC_URL: ${FOREIGN_RPC_URL:?set FOREIGN_RPC_URL}
+  ORACLE_HOME_RPC_POLLING_INTERVAL: ${HOME_RPC_POLLING_INTERVAL:-5000}
+  ORACLE_FOREIGN_RPC_POLLING_INTERVAL: ${FOREIGN_RPC_POLLING_INTERVAL:-5000}
+  ORACLE_HOME_RPC_BLOCK_POLLING_LIMIT: ${HOME_RPC_BLOCK_POLLING_LIMIT:-4000}
+  ORACLE_FOREIGN_RPC_BLOCK_POLLING_LIMIT: ${FOREIGN_RPC_BLOCK_POLLING_LIMIT:-4000}
+  ORACLE_RPC_REQUEST_TIMEOUT: ${RPC_REQUEST_TIMEOUT:-10000}
+  ORACLE_TX_REDUNDANCY: ${TX_REDUNDANCY:-false}
+  # Empty (default): on its very first run a watcher starts at the current finalized block
+  # (safe block in fcr mode). Afterwards the position is kept in Redis.
+  ORACLE_HOME_START_BLOCK: ${HOME_START_BLOCK:-}
+  ORACLE_FOREIGN_START_BLOCK: ${FOREIGN_START_BLOCK:-}
+  # Up to which block events are processed: block-finality (finalized block) or fcr (safe block).
+  ORACLE_HOME_BLOCK_PROCESSING_MODE: ${HOME_BLOCK_PROCESSING_MODE:-block-finality}
+  ORACLE_FOREIGN_BLOCK_PROCESSING_MODE: ${FOREIGN_BLOCK_PROCESSING_MODE:-block-finality}
+  ORACLE_HOME_BEACON_URL: ${HOME_BEACON_URL:-}
+  ORACLE_FOREIGN_BEACON_URL: ${FOREIGN_BEACON_URL:-}
+  # Gas price
+  COMMON_HOME_GAS_PRICE_SUPPLIER_URL: ${HOME_GAS_PRICE_SUPPLIER_URL:-eip1559-gas-estimation}
+  COMMON_HOME_GAS_PRICE_SPEED_TYPE: fast
+  COMMON_HOME_GAS_PRICE_FALLBACK: ${HOME_GAS_PRICE_FALLBACK:-1000000000}
+  COMMON_HOME_GAS_PRICE_FACTOR: 1
+  ORACLE_HOME_GAS_PRICE_UPDATE_INTERVAL: 600000
+  ORACLE_HOME_TX_RESEND_INTERVAL: ${HOME_TX_RESEND_INTERVAL:-300000}
+  COMMON_FOREIGN_GAS_PRICE_SUPPLIER_URL: ${FOREIGN_GAS_PRICE_SUPPLIER_URL:-eip1559-gas-estimation}
+  COMMON_FOREIGN_GAS_PRICE_SPEED_TYPE: fast
+  COMMON_FOREIGN_GAS_PRICE_FALLBACK: ${FOREIGN_GAS_PRICE_FALLBACK:-10000000000}
+  COMMON_FOREIGN_GAS_PRICE_FACTOR: 1
+  ORACLE_FOREIGN_GAS_PRICE_UPDATE_INTERVAL: 600000
+  ORACLE_FOREIGN_TX_RESEND_INTERVAL: ${FOREIGN_TX_RESEND_INTERVAL:-1200000}
+
+x-amb-env: &amb-env
+  <<: *common-env
+  ORACLE_BRIDGE_MODE: ARBITRARY_MESSAGE
+  COMMON_HOME_BRIDGE_ADDRESS: ${AMB_HOME_BRIDGE_ADDRESS:?set AMB_HOME_BRIDGE_ADDRESS}
+  COMMON_FOREIGN_BRIDGE_ADDRESS: ${AMB_FOREIGN_BRIDGE_ADDRESS:?set AMB_FOREIGN_BRIDGE_ADDRESS}
+  ORACLE_QUEUE_URL: amqp://rabbit_amb:5672
+  ORACLE_REDIS_URL: redis://redis_amb:6379
+
+x-xdai-env: &xdai-env
+  <<: *common-env
+  ORACLE_BRIDGE_MODE: ERC_TO_NATIVE
+  COMMON_HOME_BRIDGE_ADDRESS: ${XDAI_HOME_BRIDGE_ADDRESS:?set XDAI_HOME_BRIDGE_ADDRESS}
+  COMMON_FOREIGN_BRIDGE_ADDRESS: ${XDAI_FOREIGN_BRIDGE_ADDRESS:?set XDAI_FOREIGN_BRIDGE_ADDRESS}
+  ORACLE_QUEUE_URL: amqp://rabbit_xdai:5672
+  ORACLE_REDIS_URL: redis://redis_xdai:6379
+
+x-rabbit: &rabbit
+  image: rabbitmq:3
+  cpus: 0.3
+  mem_limit: 500m
+  restart: unless-stopped
+  logging: *logging
+
+x-redis: &redis
+  image: redis:4
+  cpus: 0.1
+  mem_limit: 500m
+  command: [redis-server, --appendonly, "yes"]
+  restart: unless-stopped
+  logging: *logging
+
+x-amb-worker: &amb-worker
+  image: ${ORACLE_IMAGE:-gnosischain/tokenbridge-oracle:v3.12.0}
+  cpus: 0.1
+  mem_limit: 500m
+  restart: unless-stopped
+  logging: *logging
+  depends_on: [rabbit_amb, redis_amb]
+
+x-xdai-worker: &xdai-worker
+  image: ${ORACLE_IMAGE:-gnosischain/tokenbridge-oracle:v3.12.0}
+  cpus: 0.1
+  mem_limit: 500m
+  restart: unless-stopped
+  logging: *logging
+  depends_on: [rabbit_xdai, redis_xdai]
+
+services:
+  # ------------------------------------------------------------------ AMB (and Omnibridge)
+  rabbit_amb:
+    <<: *rabbit
+    # The hostname is part of RabbitMQ's data directory name: keep it fixed.
+    hostname: rabbit-amb
+    environment: ["RABBITMQ_NODENAME=node@rabbit-amb"]
+    volumes: ["rabbit_amb:/var/lib/rabbitmq/mnesia"]
+  redis_amb:
+    <<: *redis
+    volumes: ["redis_amb:/data"]
+
+  # home -> foreign, step 1: sign UserRequestForSignature (submitSignature on home)
+  amb_request:
+    <<: *amb-worker
+    entrypoint: yarn watcher:signature-request
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY: ${AMB_VALIDATOR_PRIVATE_KEY:?set AMB_VALIDATOR_PRIVATE_KEY}
+  # home -> foreign, step 2: once signatures are collected, executeSignatures on foreign
+  amb_collected:
+    <<: *amb-worker
+    entrypoint: yarn watcher:collected-signatures
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS: ${AMB_VALIDATOR_ADDRESS:?set AMB_VALIDATOR_ADDRESS}
+  # foreign -> home: executeAffirmation on home
+  amb_affirmation:
+    <<: *amb-worker
+    entrypoint: yarn watcher:affirmation-request
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS: ${AMB_VALIDATOR_ADDRESS:?set AMB_VALIDATOR_ADDRESS}
+  amb_senderhome:
+    <<: *amb-worker
+    entrypoint: yarn sender:home
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY: ${AMB_VALIDATOR_PRIVATE_KEY:?set AMB_VALIDATOR_PRIVATE_KEY}
+  amb_senderforeign:
+    <<: *amb-worker
+    entrypoint: yarn sender:foreign
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY: ${AMB_VALIDATOR_PRIVATE_KEY:?set AMB_VALIDATOR_PRIVATE_KEY}
+  amb_fcrvalidator:
+    <<: *amb-worker
+    profiles: [fcr]
+    restart: on-failure
+    entrypoint: yarn validator:fcr-txs
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS: ${AMB_VALIDATOR_ADDRESS:?set AMB_VALIDATOR_ADDRESS}
+  amb_shutdown:
+    <<: *amb-worker
+    profiles: [shutdown]
+    entrypoint: yarn manager:shutdown
+    environment:
+      <<: *amb-env
+      ORACLE_VALIDATOR_ADDRESS: ${AMB_VALIDATOR_ADDRESS:?set AMB_VALIDATOR_ADDRESS}
+      ORACLE_SHUTDOWN_SERVICE_URL: ${SHUTDOWN_SERVICE_URL:-}
+      ORACLE_SIDE_RPC_URL: ${SHUTDOWN_SIDE_RPC_URL:-}
+      ORACLE_SHUTDOWN_CONTRACT_ADDRESS: ${SHUTDOWN_CONTRACT_ADDRESS:-}
+
+  # ------------------------------------------------------------------ xDAI bridge
+  rabbit_xdai:
+    <<: *rabbit
+    hostname: rabbit-xdai
+    environment: ["RABBITMQ_NODENAME=node@rabbit-xdai"]
+    volumes: ["rabbit_xdai:/var/lib/rabbitmq/mnesia"]
+  redis_xdai:
+    <<: *redis
+    volumes: ["redis_xdai:/data"]
+
+  xdai_request:
+    <<: *xdai-worker
+    entrypoint: yarn watcher:signature-request
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY: ${XDAI_VALIDATOR_PRIVATE_KEY:?set XDAI_VALIDATOR_PRIVATE_KEY}
+  xdai_collected:
+    <<: *xdai-worker
+    entrypoint: yarn watcher:collected-signatures
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS: ${XDAI_VALIDATOR_ADDRESS:?set XDAI_VALIDATOR_ADDRESS}
+  xdai_affirmation:
+    <<: *xdai-worker
+    entrypoint: yarn watcher:affirmation-request
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS: ${XDAI_VALIDATOR_ADDRESS:?set XDAI_VALIDATOR_ADDRESS}
+  xdai_senderhome:
+    <<: *xdai-worker
+    entrypoint: yarn sender:home
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY: ${XDAI_VALIDATOR_PRIVATE_KEY:?set XDAI_VALIDATOR_PRIVATE_KEY}
+  xdai_senderforeign:
+    <<: *xdai-worker
+    entrypoint: yarn sender:foreign
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY: ${XDAI_VALIDATOR_PRIVATE_KEY:?set XDAI_VALIDATOR_PRIVATE_KEY}
+  xdai_fcrvalidator:
+    <<: *xdai-worker
+    profiles: [fcr]
+    restart: on-failure
+    entrypoint: yarn validator:fcr-txs
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS: ${XDAI_VALIDATOR_ADDRESS:?set XDAI_VALIDATOR_ADDRESS}
+  xdai_shutdown:
+    <<: *xdai-worker
+    profiles: [shutdown]
+    entrypoint: yarn manager:shutdown
+    environment:
+      <<: *xdai-env
+      ORACLE_VALIDATOR_ADDRESS: ${XDAI_VALIDATOR_ADDRESS:?set XDAI_VALIDATOR_ADDRESS}
+      ORACLE_SHUTDOWN_SERVICE_URL: ${SHUTDOWN_SERVICE_URL:-}
+      ORACLE_SIDE_RPC_URL: ${SHUTDOWN_SIDE_RPC_URL:-}
+      ORACLE_SHUTDOWN_CONTRACT_ADDRESS: ${SHUTDOWN_CONTRACT_ADDRESS:-}
+
+# Redis holds the last processed block and the sender nonce; RabbitMQ holds queued jobs.
+# Keep these volumes across restarts and upgrades.
+volumes:
+  rabbit_amb:
+  redis_amb:
+  rabbit_xdai:
+  redis_xdai:

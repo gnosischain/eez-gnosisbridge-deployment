@@ -1,0 +1,4 @@
+# Filled-in env files contain the validator private keys.
+.env
+.env.*
+!.env.*.example

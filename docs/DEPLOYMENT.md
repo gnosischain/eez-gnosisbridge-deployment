@@ -1,11 +1,13 @@
 # DEPLOYMENT.md — changes and learnings
 
 Record of what was built and deployed in this repository, what differs from `ACTION.md`, and what was learned on the way.
-Only the **Chiado ↔ RollupX testnet** pair has been deployed. The Ethereum ↔ RollupX pair is prepared in config and build but has not been tested or deployed.
+Both pairs are deployed: **Chiado ↔ RollupX testnet** on 2026-11-23 and **Ethereum ↔ RollupX** on 2026-11-24.
 
-Nothing has been committed or pushed: the repository is initialised locally only.
+The Ethereum ↔ RollupX work (config change, test class, address books, broadcast files, this document) is in the working tree only; it has not been staged, committed or pushed.
 
-## 1. Status (2026-11-23)
+## 1. Status
+
+### Chiado ↔ RollupX testnet (2026-11-23)
 
 | Step | Chiado (foreign, 10200) | RollupX testnet (home, 699169) |
 |---|---|---|
@@ -15,6 +17,20 @@ Nothing has been committed or pushed: the repository is initialised locally only
 | Verified on explorer | **14 of 14** | **0 of 15 — blocked by the explorer, see 5.1** |
 
 Gas used: 22.7M on Chiado (about 0.023 xDAI at 1 gwei priority fee) and 24.6M on RollupX testnet (negligible at ~49 wei gas price).
+
+### Ethereum ↔ RollupX (2026-11-24)
+
+| Step | Ethereum (foreign, 1) | RollupX (home, 696991) |
+|---|---|---|
+| Deployed | yes, 30 transactions, 0 failed (one resent, see 5.7) | yes, 36 transactions, 0 failed |
+| Deployment blocks | 26486214 – 26486252, plus the resent transaction in 26486295 | 1163461 – 1163503 |
+| Live check (`make check PAIR=ethereum-rollupx`) | passes | passes |
+| Fork tests | 18 of 18 pass, both against a fresh fork deployment and against the live addresses | same |
+| Verified on explorer | **12 of 12** on `eth.blockscout.com` | **0 of 15 — blocked by the explorer, see 5.1** |
+
+Gas used: 21,837,165 on Ethereum, costing **0.01116 ETH** at roughly 0.4–1.5 gwei, and 24,616,309 on RollupX, costing 1.23 gwei of ETH (1,230,815,450 wei) at 50 wei per gas.
+
+Deployer balance afterwards: 0.0384 ETH on Ethereum and 8,769,184,550 wei on RollupX.
 
 ## 2. Addresses
 
@@ -65,6 +81,50 @@ The address books are `deployments/chiado-rollupx-testnet/foreign.json` and `hom
 
 Some addresses are identical on both chains but are **different contracts** (for example `0x7C7B…5E79` is the xDAI bridge proxy on Chiado and the block-reward stub on RollupX). This is because the same deployer started from nonce 0 on both chains. Always read an address together with its chain.
 
+### Ethereum (foreign)
+
+The address books are `deployments/ethereum-rollupx/foreign.json` and `home.json`.
+
+| Key | Address |
+|---|---|
+| `amb` | [`0x0Bbb04F132Ca55d11d9a6E24A79660D4EFCd5CC3`](https://eth.blockscout.com/address/0x0Bbb04F132Ca55d11d9a6E24A79660D4EFCd5CC3) |
+| `ambImpl` | [`0x7423c8479fE83043b07685977c8dd85632B50fC0`](https://eth.blockscout.com/address/0x7423c8479fE83043b07685977c8dd85632B50fC0) |
+| `ambValidators` | [`0xE497d517504CAf9675a72cb5707E4d1c4bfEB1fD`](https://eth.blockscout.com/address/0xE497d517504CAf9675a72cb5707E4d1c4bfEB1fD) |
+| `ambValidatorsImpl` | [`0xE708DA9F6De9a197243F5586eaEE4750F66e5b11`](https://eth.blockscout.com/address/0xE708DA9F6De9a197243F5586eaEE4750F66e5b11) |
+| `omnibridge` | [`0xf6aAA665Cc5EEF0DFDD1F0Db405C77F348C64035`](https://eth.blockscout.com/address/0xf6aAA665Cc5EEF0DFDD1F0Db405C77F348C64035) |
+| `omnibridgeImpl` | [`0x7d8Fb7AD55C3C4b85a3FCb49Af9F743A67f4666d`](https://eth.blockscout.com/address/0x7d8Fb7AD55C3C4b85a3FCb49Af9F743A67f4666d) |
+| `tokenFactory` | [`0x88e1f2672F798bD4288A9959e3294c5e2748F12D`](https://eth.blockscout.com/address/0x88e1f2672F798bD4288A9959e3294c5e2748F12D) |
+| `tokenImage` | [`0x8Fa91Be2f426cE03BD405044DA243A547b88166b`](https://eth.blockscout.com/address/0x8Fa91Be2f426cE03BD405044DA243A547b88166b) |
+| `usds` | [`0xdC035D45d973E3EC169d2276DDab16f1e407384F`](https://eth.blockscout.com/address/0xdC035D45d973E3EC169d2276DDab16f1e407384F) |
+| `xdaiBridge` | [`0x3D2312b94046792EBE00eB77cACf8Bd058F3B312`](https://eth.blockscout.com/address/0x3D2312b94046792EBE00eB77cACf8Bd058F3B312) |
+| `xdaiBridgeImpl` | [`0xF1E85f146b1EAfEeE0ed6F7e29dD1599286542ED`](https://eth.blockscout.com/address/0xF1E85f146b1EAfEeE0ed6F7e29dD1599286542ED) |
+| `xdaiValidators` | [`0x48A31B5af89730786415E33123fe52f9F59e0258`](https://eth.blockscout.com/address/0x48A31B5af89730786415E33123fe52f9F59e0258) |
+| `xdaiValidatorsImpl` | [`0xDd753b50922A74a5365A124AA016f61A1BA871b0`](https://eth.blockscout.com/address/0xDd753b50922A74a5365A124AA016f61A1BA871b0) |
+
+`usds` is the real USDS token, not deployed here. No mock tokens exist on this pair; the Omnibridge tests use WETH `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` as a plain ERC-20 (D6).
+
+### RollupX (home)
+
+| Key | Address |
+|---|---|
+| `amb` | [`0x7423c8479fE83043b07685977c8dd85632B50fC0`](https://rollupx.eez.dev/explorer/address/0x7423c8479fE83043b07685977c8dd85632B50fC0) |
+| `ambImpl` | [`0xE2b140Ab543d9b93a9a7D4da78A86945A27212cA`](https://rollupx.eez.dev/explorer/address/0xE2b140Ab543d9b93a9a7D4da78A86945A27212cA) |
+| `ambValidators` | [`0xE708DA9F6De9a197243F5586eaEE4750F66e5b11`](https://rollupx.eez.dev/explorer/address/0xE708DA9F6De9a197243F5586eaEE4750F66e5b11) |
+| `ambValidatorsImpl` | [`0x509703Cf725191975506E5710f5a427f9799CCB3`](https://rollupx.eez.dev/explorer/address/0x509703Cf725191975506E5710f5a427f9799CCB3) |
+| `blockReward` | [`0x7C7B3770744Fe56E860F2846b22c75A749CD5E79`](https://rollupx.eez.dev/explorer/address/0x7C7B3770744Fe56E860F2846b22c75A749CD5E79) |
+| `forwardingRulesManager` | [`0xacD0e4B46cD2E83B20CB467494494126aEEa3013`](https://rollupx.eez.dev/explorer/address/0xacD0e4B46cD2E83B20CB467494494126aEEa3013) |
+| `gasLimitManager` | [`0x03b56d0a8cfA013093A1E0228a7c27Ce366FD1FA`](https://rollupx.eez.dev/explorer/address/0x03b56d0a8cfA013093A1E0228a7c27Ce366FD1FA) |
+| `omnibridge` | [`0x010e3f424FEf2f2FF858E147d4E750C46Ab7611a`](https://rollupx.eez.dev/explorer/address/0x010e3f424FEf2f2FF858E147d4E750C46Ab7611a) |
+| `omnibridgeImpl` | [`0x8a6cADfB581e30eD669ac3B80A437414Bc0049BC`](https://rollupx.eez.dev/explorer/address/0x8a6cADfB581e30eD669ac3B80A437414Bc0049BC) |
+| `tokenFactory` | [`0x44cc94FCee5318D7369fF0D81a4C5fB1C5Bfd95d`](https://rollupx.eez.dev/explorer/address/0x44cc94FCee5318D7369fF0D81a4C5fB1C5Bfd95d) |
+| `tokenImage` | [`0x34b314ab13e89c7c654a485A6d8EE9cB68917136`](https://rollupx.eez.dev/explorer/address/0x34b314ab13e89c7c654a485A6d8EE9cB68917136) |
+| `xdaiBridge` | [`0xF1E85f146b1EAfEeE0ed6F7e29dD1599286542ED`](https://rollupx.eez.dev/explorer/address/0xF1E85f146b1EAfEeE0ed6F7e29dD1599286542ED) |
+| `xdaiBridgeImpl` | [`0x634c12FF1a82E298eF0e5D23B8319c3CFD3Aa093`](https://rollupx.eez.dev/explorer/address/0x634c12FF1a82E298eF0e5D23B8319c3CFD3Aa093) |
+| `xdaiValidators` | [`0xDd753b50922A74a5365A124AA016f61A1BA871b0`](https://rollupx.eez.dev/explorer/address/0xDd753b50922A74a5365A124AA016f61A1BA871b0) |
+| `xdaiValidatorsImpl` | [`0x16917fD421Faa4CE5Df7DF2Ee6d5aCe048C433e7`](https://rollupx.eez.dev/explorer/address/0x16917fD421Faa4CE5Df7DF2Ee6d5aCe048C433e7) |
+
+The RollupX addresses are **identical to the RollupX testnet addresses**, because the same deployer started from nonce 0 on both rollups. On Ethereum the deployer started from nonce 1, so the Ethereum addresses are shifted by one against Chiado: several of them equal a Chiado address of a different contract. Always read an address together with its chain.
+
 ## 3. How to reproduce
 
 ```
@@ -78,6 +138,16 @@ make deploy-finalize GAS_FLAGS="--with-gas-price 3gwei --priority-gas-price 1gwe
 make check                           # read-only assertions on both live chains
 make test-deployed                   # the same tests against the live addresses
 make verify                          # verify everything, then print the state of every address
+```
+
+For the Ethereum pair every target takes `PAIR=ethereum-rollupx`, and no gas flags were needed:
+
+```
+make deploy-foreign  PAIR=ethereum-rollupx   # stage 1, Ethereum
+make deploy-home     PAIR=ethereum-rollupx   # stage 2, RollupX
+make deploy-finalize PAIR=ethereum-rollupx   # stage 3, Ethereum
+make check           PAIR=ethereum-rollupx
+make verify          PAIR=ethereum-rollupx
 ```
 
 Toolchain: Foundry 1.8.5, Node 24 (only to fetch `openzeppelin-solidity@1.12.0` and `@openzeppelin/contracts@3.2.2-solc-0.7`, pinned by `package-lock.json`).
@@ -95,6 +165,7 @@ Toolchain: Foundry 1.8.5, Node 24 (only to fetch `openzeppelin-solidity@1.12.0` 
 | `script/lib/Checks.sol` | Post-deployment assertions: owners, proxy admins, validator set, limits, cross-chain links, Hashi off. |
 | `script/Deploy.s.sol` | Entry points `foreign()`, `home()`, `finalize()`, `check()`. |
 | `test/PairTest.sol` | Two-fork tests for AMB, Omnibridge and xDAI bridge in both directions, plus negative cases. |
+| `test/ChiadoRollupXTestnet.t.sol`, `test/EthereumRollupX.t.sol` | One class per pair: config, fork blocks and the Omnibridge test token (mock token on Chiado, WETH on Ethereum). |
 | `scripts/verify.sh` | Verifies every address and fails if any is left unverified. |
 
 ### 4.1 Deviations from upstream source
@@ -104,13 +175,13 @@ Toolchain: Foundry 1.8.5, Node 24 (only to fetch `openzeppelin-solidity@1.12.0` 
 | `amb-disable-hashi.patch` | `master` (AMB) | `HASHI_IS_ENABLED = false` (D1) |
 | `xdai-disable-hashi.patch` | `xdaibridge` | `HASHI_IS_ENABLED = false` (O1) |
 | `xdai-chiado-mock-usds.patch` | `xdaibridge`, testnet build | Mainnet USDS replaced by the mock USDS in `XDaiForeignBridge` and `SavingsDaiConnector`; home bridge `DAI` **and** `USDS` constants set to the mock USDS (D3, O4, and learning 5.3) |
-| `xdai-ethereum-home-usds.patch` | `xdaibridge`, mainnet build | Home bridge `DAI` constant set to real USDS (O4). Built, not deployed. |
+| `xdai-ethereum-home-usds.patch` | `xdaibridge`, mainnet build | Home bridge `DAI` constant set to real USDS (O4). Deployed on RollupX. |
 
 The Omnibridge (PR 6) is unpatched.
 
 ### 4.2 Parameters
 
-Read from the live production contracts on 2026-11-23 and used for the testnet pair as decided (D8).
+Read from the live production contracts on 2026-11-23 and used for both pairs as decided (D8).
 
 | Bridge | Side | Source contract | Values |
 |---|---|---|---|
@@ -124,14 +195,25 @@ Read from the live production contracts on 2026-11-23 and used for the testnet p
 Not copied from production:
 
 - **Validators:** one mock validator, threshold 1.
-- **Token name suffixes:** ` on RollupX Testnet` (home) and ` on Chiado` (foreign).
+- **Token name suffixes:** ` on RollupX Testnet` (home) and ` on Chiado` (foreign) for the testnet pair; ` on RollupX` and ` on Ethereum` for the Ethereum pair.
 - **Omnibridge fee manager:** production has one on the home side; none is deployed here, so bridging is free.
-- **Home xDAI minimum per transfer, Ethereum pair only:** 1 wei instead of 10 coins (not deployed yet). The testnet pair keeps 10.
+- **Home xDAI minimum per transfer, Ethereum pair only:** 1 wei instead of 10 coins, which would be 10 ETH. The testnet pair keeps 10.
+- **Home Omnibridge minimum per transfer, Ethereum pair only:** 1 wei instead of 1 token, which would be 1 WETH for a RollupX → Ethereum transfer. Set by the user on 2026-11-24. The testnet pair keeps 1 token.
 - **Selector gas limits:** 850,000 for `0x2ae87cdd` and `0xd522cfd7` on the home gas limit manager, as PR 6 recommends for CREATE2 token deployment. Production has no selector overrides.
 
 ## 5. Learnings
 
-### 5.1 RollupX testnet explorer cannot verify contracts at the moment (open)
+### 5.1 RollupX explorers cannot verify contracts at the moment (open)
+
+Investigated again on 2026-11-25, on both `eez.dev/explorer` and `rollupx.eez.dev/explorer` (Blockscout v9.0.2). The cause is on the explorer backend, not in the contracts or in the submitted sources:
+
+- The verification config reports `is_rust_verifier_microservice_enabled: true` together with **zero** Solidity, Vyper, zk and Stylus compiler versions. With the microservice enabled, Blockscout takes these lists from the verifier microservice, so the backend is getting nothing back from it. On RollupX mainnet the config call takes about 32 seconds, which looks like a timeout towards that service.
+- A submission of the plain solc 0.8.25 `BlockRewardStub` on RollupX mainnet is accepted, stays `Pending in queue` for about 15 seconds and ends in `Fail - Unable to verify`.
+- The last successful verifications were 2026-11-07 (RollupX) and 2026-11-10 (testnet); none since on either explorer.
+- **Where it is configured:** `docker-compose.explorers.yml` in [`eez-association/eez-rollupX`](https://github.com/eez-association/eez-rollupX/blob/main/docker-compose.explorers.yml) (runbook: `docs/runbooks/explorers.md`). The `blockscout` service sets `MICROSERVICE_SC_VERIFIER_ENABLED: "true"`, `MICROSERVICE_SC_VERIFIER_URL: http://verifier:8050/` and `MICROSERVICE_SC_VERIFIER_TYPE: sc_verifier` (lines 86–88). The `verifier` service (lines 32–37) is a self-hosted `ghcr.io/blockscout/smart-contract-verifier` container whose only setting is its listen address, so it uses the default compiler lists (`https://binaries.soliditylang.org/linux-amd64/list.json` for Solidity). The live frontend settings match this file.
+- **So the settings themselves are correct**, and the list URL answers from the public internet. The fault is in the running `verifier` container: either it is not running, or it cannot reach the internet to download the compiler list and binaries. Which of the two is **not confirmed**; it needs the operator to look on the host (`docker compose -p eez-explorers ps verifier`, `logs verifier`, and `curl http://verifier:8050/api/v2/verifier/solidity/versions` from the `blockscout` container).
+
+Earlier notes:
 
 - Both the standard-JSON and the flattened-source methods are accepted (`Smart-contract verification started`) and then end in `Fail - Unable to verify`, also for a plain solc 0.8.25 contract.
 - `https://eez.dev/explorer/api/v2/smart-contracts/verification/config` returns an **empty** `solidity_compiler_versions` list. The mainnet RollupX explorer returns the same empty list.
@@ -169,8 +251,18 @@ The xDAI bridge and the Omnibridge each need the address of their counterpart at
 - **xDAI messages are 124 bytes** (recipient, value, nonce, foreign bridge, token) and the signed prefix contains the decimal length `124`. The tests build the message from the `UserRequestForSignature` event.
 - **Chiado accepted a 1 gwei priority fee**; Foundry's own estimate was 1 wei, which was not tried.
 - **The address book is only written on a real broadcast**, so a dry run cannot leave addresses of contracts that do not exist.
-- **Fresh-deployment tests fork from the block before the live deployment** (Chiado 24142211, RollupX testnet 2272510), because the CREATE2 contracts now exist on the live chains.
+- **Fresh-deployment tests fork from the block before the live deployment** (Chiado 24142211, RollupX testnet 2272510, Ethereum 26486213, RollupX 1163460), because the CREATE2 contracts now exist on the live chains.
 - **Home-to-foreign tests add a test validator** on the fork (pranked as Owner), because `executeSignatures` needs a real signature and the mock validator's key is not available to the tests.
+
+### 5.7 Ethereum: a transaction can be left pending when the base fee rises mid-run
+
+Foundry caps each transaction at about twice the base fee seen when the script starts. During stage 3 the Ethereum base fee rose from 0.38 gwei to 1.6 gwei, so the last transaction (`transferProxyOwnership` on the foreign Omnibridge, nonce 30, fee cap 0.755 gwei) stayed in the mempool. Foundry reported "Some transactions were discarded by the RPC node" and `make check` failed with `foreign Omnibridge: proxy admin`.
+
+- It was resent with `cast send` using the same nonce, the same calldata taken from the broadcast file, and a 5 gwei fee cap: [`0xb9bf695685b9e8325294a6d8c91d34f1e774efdea8ef3d7f009550538fe30e25`](https://eth.blockscout.com/tx/0xb9bf695685b9e8325294a6d8c91d34f1e774efdea8ef3d7f009550538fe30e25).
+- `broadcast/Deploy.s.sol/1/finalize-latest.json` therefore lists the replaced hash `0x61722b67…2847f` for that transaction and has only 3 receipts. The hash above is the one that was mined.
+- `forge script --resume` did not work for this script (`Missing --fork-url field`), because the script selects its fork itself.
+- To avoid this on Ethereum, pass a generous cap, for example `GAS_FLAGS="--with-gas-price 5gwei"`.
+- Stage 3 is not re-runnable from the start once its `initialize` calls have landed, so a partly sent stage 3 has to be finished transaction by transaction.
 
 ## 6. What the tests cover
 
@@ -180,7 +272,7 @@ For each case: source-chain balance decrease, source event, destination event.
 |---|---|---|
 | AMB | foreign → home | `UserRequestForAffirmation` → `AffirmationCompleted(status = true)`, target called with the right `messageSender` |
 | AMB | home → foreign | `UserRequestForSignature` → `RelayedMessage(status = true)` |
-| Omnibridge | foreign → home | tokens locked, `TokensBridgingInitiated` → `NewTokenRegistered` + `TokensBridged`; bridged token is at the predicted CREATE2 address and named "… on RollupX Testnet"; a second transfer does not redeploy |
+| Omnibridge | foreign → home | tokens locked, `TokensBridgingInitiated` → `NewTokenRegistered` + `TokensBridged`; bridged token is at the predicted CREATE2 address and named "… on RollupX Testnet" (testnet pair) or "… on RollupX" (Ethereum pair); a second transfer does not redeploy |
 | Omnibridge | home → foreign | bridged token burnt → `TokensBridged`, locked tokens released |
 | xDAI | foreign → home | USDS locked, `UserRequestForAffirmation` → stub `AddedReceiver` + `AffirmationCompleted`; **recipient native balance unchanged** |
 | xDAI | home → foreign | via `relayTokens` and via plain transfer: coin sent to `address(0)`, `UserRequestForSignature` carries USDS → `RelayedMessage`, USDS received |
@@ -191,6 +283,7 @@ These are contract-level tests on forks. No real cross-chain transfer has been s
 
 ## 7. Open items
 
-1. **RollupX testnet verification** — blocked by the explorer (5.1).
-2. **Ethereum ↔ RollupX pair** — config and patched build exist; test class, gas estimate, funding and deployment are not done.
-3. **Git** — nothing committed or pushed. `INSTRUCTION.md` and `.env` are git-ignored because they contain the deployer key and the API key.
+1. **RollupX and RollupX testnet verification** — blocked by the explorers (5.1). 15 contracts on each rollup are unverified. Once fixed: `./scripts/verify.sh ethereum-rollupx home` and `./scripts/verify.sh chiado-rollupx-testnet home`.
+2. **No oracle and no live transfer** — on both pairs nothing relays messages, and no real transfer has been sent through the live contracts. Funds sent into the mainnet bridges stay locked until the validator relays them.
+3. **Single validator on mainnet** — the Ethereum pair uses the one mock validator with threshold 1, as decided (O3, D9). Its key alone can release any USDS or WETH locked on Ethereum.
+4. **Git** — the Ethereum ↔ RollupX work is not staged, committed or pushed. `INSTRUCTION.md` and `.env` are git-ignored because they contain the deployer key and the API key.

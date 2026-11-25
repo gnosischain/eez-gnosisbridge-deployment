@@ -86,6 +86,8 @@ library Config {
         c.homeTokenSuffix = " on RollupX";
         // Home-to-foreign xDAI minimum: 1 wei instead of the production 10 coins, which would be 10 ETH here.
         c.homeXdaiLimits[2] = 1;
+        // Home-to-foreign Omnibridge minimum: 1 wei instead of the production 1 token, which would be 1 WETH here.
+        c.homeOmniLimits[2] = 1;
         c.foreignTokenSuffix = " on Ethereum";
     }
 
